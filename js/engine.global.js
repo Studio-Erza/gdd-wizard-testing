@@ -598,9 +598,46 @@ function repeatableEditor(cfg){
       orderedKeys,'templateId', ...extraPrefs, 'metaImage']);
     const pruned={};
     Object.keys(data||{}).forEach(k=>{ if(allowed.has(k)) pruned[k]=data[k]; });
-    return pruned;
+    
+// migrate old textarea values
+if (typeof pruned.pluginsTools === 'string') {
+  pruned.pluginsTools = pruned.pluginsTools.trim() ? [pruned.pluginsTools.trim()] : [];
+}
+if (typeof pruned.assetSources === 'string') {
+  pruned.assetSources = pruned.assetSources.trim() ? [pruned.assetSources.trim()] : [];
+}
+return pruned;
+
   }
-  function computeKeysInWizardOrder(t){ const keys=[]; (t.sections||[]).forEach(entry=>{ const F=FrameworkRegistry && FrameworkRegistry[entry.framework]; const fields=F && F.step ? F.step(entry.rules, entry) : []; fields.forEach(f=>{ if(f && typeof f==='object'){ if(f.type==='input' || f.type==='textarea' || f.type==='checkboxes' || f.type==='radios'){ if(f.name) keys.push(f.name); } else if (f.type==='review-panel' || f.type==='image'){ } } }); if(entry.framework==='repeatable_items'){ if(entry.editor==='dynamic-steps') keys.push('loopSteps'); if(entry.editor==='dynamic-features') keys.push('features'); if(entry.editor==='dynamic-team') keys.push('teamMembers'); if(entry.editor==='dynamic-milestones') keys.push('milestones'); } }); return keys; }
+  function computeKeysInWizardOrder(t){ 
+    const keys=[];
+    (t.sections||[]).forEach(entry=>{
+      const F=FrameworkRegistry && FrameworkRegistry[entry.framework];
+      const fields=F && F.step ? F.step(entry.rules, entry) : [];
+      fields.forEach(f=>{
+        if(f && typeof f==='object'){
+          if(
+            f.type==='input' || 
+            f.type==='textarea' || 
+            f.type==='checkboxes' || 
+            f.type==='radios' ||
+            f.type==='repeatableList'
+          ){
+            if(f.name) keys.push(f.name);
+          } else if (f.type==='review-panel' || f.type==='image'){
+            // no-op, structural only
+          }
+        }
+      });
+      if(entry.framework==='repeatable_items'){
+        if(entry.editor==='dynamic-steps') keys.push('loopSteps');
+        if(entry.editor==='dynamic-features') keys.push('features');
+        if(entry.editor==='dynamic-team') keys.push('teamMembers');
+        if(entry.editor==='dynamic-milestones') keys.push('milestones');
+      }
+    });
+    return keys;
+  }
   function makeDefaultData(templateId){ return { templateId }; }
   function switchTemplate(id){ Wizard.data=loadTemplateData(id); if(!Wizard.data.exportTheme) Wizard.data.exportTheme='light'; Wizard.steps=stepsForActiveTemplate(); Wizard.step=0; buildStepsNavProgress(); render(); persist(); }
 
@@ -654,7 +691,20 @@ function repeatableEditor(cfg){
       const pruned={ templateId: tid };
       Object.keys(payload.data||{}).forEach(k=>{ if(allowed.has(k)) pruned[k]=payload.data[k]; });
       if ('metaImage' in (payload.data||{})) pruned.metaImage = payload.data.metaImage;
-      Wizard.data=pruned;
+      
+Wizard.data=pruned;
+
+// --- MIGRATE old textarea values to new repeatableList arrays ---
+function migrateToList(name){
+  const v = Wizard.data[name];
+  if (typeof v === 'string') {
+    const trimmed = v.trim();
+    Wizard.data[name] = trimmed ? [trimmed] : [];
+  }
+}
+migrateToList('pluginsTools');
+migrateToList('assetSources');
+
       if(!Wizard.data.exportTheme) Wizard.data.exportTheme='light';
       persist();
       Wizard.steps=stepsForActiveTemplate();
