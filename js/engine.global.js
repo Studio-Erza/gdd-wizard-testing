@@ -166,7 +166,8 @@
     if (field.type==='dynamic-features')   return parent.appendChild(renderDynamicFeatures(field));
     if (field.type==='dynamic-team')       return parent.appendChild(renderDynamicTeam(field));
     if (field.type==='dynamic-milestones') return parent.appendChild(renderDynamicMilestones(field));
-    if (field.type==='image')              return parent.appendChild(renderImageField(field));
+    if (field.type=== 'dynamic-bullets')   return parent.appendChild(renderDynamicBullets(field));
+	if (field.type==='image')              return parent.appendChild(renderImageField(field));
     if (field.type==='review-panel')       return parent.appendChild(renderReviewPanel(field.variant));
     if (field.type === 'info') {
       const wrap = document.createElement('div');
@@ -353,6 +354,88 @@
       }
     });
   }
+
+	// -- Bullet Points -- 
+function renderDynamicBullets(field) {
+
+    // ensure the field exists in data
+    if (!Array.isArray(Wizard.data[field.name])) {
+        Wizard.data[field.name] = [];
+    }
+
+    const arr = Wizard.data[field.name];
+    const wrap = TemplateEngine.make("dynamicWrapper");
+
+    // renderer
+    function render() {
+        wrap.innerHTML = "";
+
+        arr.forEach((val, i) => {
+            const row = TemplateEngine.make("dynamicRow");
+
+            // single-line expanding textarea
+            const input = document.createElement("textarea");
+            input.rows = 1;
+            input.value = val;
+            input.classList.add("dynamic-input");
+
+            input.addEventListener("input", (e) => {
+                arr[i] = e.target.value;
+                Wizard.data[field.name] = [...arr];
+                autoExpand(input);
+            });
+
+            autoExpand(input);
+
+            // move up
+            const up = TemplateEngine.make("dynamicUp");
+            up.onclick = () => {
+                if (i > 0) {
+                    [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                    Wizard.data[field.name] = [...arr];
+                    render();
+                }
+            };
+
+            // move down
+            const down = TemplateEngine.make("dynamicDown");
+            down.onclick = () => {
+                if (i < arr.length - 1) {
+                    [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                    Wizard.data[field.name] = [...arr];
+                    render();
+                }
+            };
+
+            // remove
+            const remove = TemplateEngine.make("dynamicRemove");
+            remove.onclick = () => {
+                arr.splice(i, 1);
+                Wizard.data[field.name] = [...arr];
+                render();
+            };
+
+            row.appendChild(input);
+            row.appendChild(up);
+            row.appendChild(down);
+            row.appendChild(remove);
+            wrap.appendChild(row);
+        });
+
+        // add button
+        const add = TemplateEngine.make("dynamicAdd");
+        add.onclick = () => {
+            arr.push("");
+            Wizard.data[field.name] = [...arr];
+            render();
+        };
+        wrap.appendChild(add);
+    }
+
+    render();
+    return wrap;
+}
+
 
   function renderImageField(field){ const wrap=document.createElement('div'); wrap.style.gridColumn='1 / -1'; const lab=document.createElement('label'); lab.textContent=field.label||'field.image'; wrap.appendChild(lab); const panel=document.createElement('div'); panel.className='imgPanel'; const row=document.createElement('div'); row.className='imgRow'; const thumb=document.createElement('div'); thumb.className='dz-thumb'; thumb.innerHTML=Wizard.data.metaImage?`<img src="${escapeHtmlAttr(Wizard.data.metaImage)}" alt="" />`:'ui.camera'; row.appendChild(thumb); const btnRow=document.createElement('div'); btnRow.className='btnRow'; const uploadBtn=document.createElement('button'); uploadBtn.className='secondary'; uploadBtn.textContent='btn.uploadImage'; const clearBtn=document.createElement('button'); clearBtn.className='secondary'; clearBtn.textContent='btn.clear'; btnRow.appendChild(uploadBtn); btnRow.appendChild(clearBtn); row.appendChild(btnRow); const sizeRow=document.createElement('div'); sizeRow.className='sizeRow'; const minus=document.createElement('button'); minus.className='secondary'; minus.textContent='ui.minus'; const sizeVal=document.createElement('span'); sizeVal.textContent=`${Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM)} mm`; const plus=document.createElement('button'); plus.className='secondary'; plus.textContent='ui.plus'; sizeRow.appendChild(document.createTextNode('label.printSize')); sizeRow.appendChild(minus); sizeRow.appendChild(sizeVal); sizeRow.appendChild(plus); const tip=document.createElement('div'); tip.className='tip'; tip.innerHTML='tip.image.dragdrop'; panel.appendChild(row); panel.appendChild(sizeRow); panel.appendChild(tip); wrap.appendChild(panel); uploadBtn.onclick=()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) handleImageFile(f); }; inp.click(); }; clearBtn.onclick=()=>{ set('metaImage',''); thumb.innerHTML='ui.camera'; persist(); }; minus.onclick=()=>{ const cur=Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM); const next=Math.max(MIN_IMG_MM, cur-STEP_IMG_MM); set('metaImageMM', next); sizeVal.textContent=`${next} mm`; persist(); }; plus.onclick=()=>{ const cur=Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM); const next=Math.min(MAX_IMG_MM, cur+STEP_IMG_MM); set('metaImageMM', next); sizeVal.textContent=`${next} mm`; persist(); }; let dragCounter=0; const acceptDrop=e=>{ e.preventDefault(); e.stopPropagation(); if(e.dataTransfer) e.dataTransfer.dropEffect='copy'; }; const onEnter=e=>{ acceptDrop(e); dragCounter++; panel.classList.add('dragging'); }; const onLeave=e=>{ acceptDrop(e); dragCounter=Math.max(0,dragCounter-1); if(dragCounter===0) panel.classList.remove('dragging'); }; const onOver=e=>acceptDrop(e); const onDrop=e=>{ acceptDrop(e); dragCounter=0; panel.classList.remove('dragging'); const dt=e.dataTransfer; if(!dt) return; const files=dt.files; if(files&&files.length){ handleImageFile(files[0]); } }; [panel, thumb].forEach(el=>{ el.addEventListener('dragenter', onEnter); el.addEventListener('dragleave', onLeave); el.addEventListener('dragover', onOver); el.addEventListener('drop', onDrop); }); async function handleImageFile(file){ const typeOk=(file.type&&/^image\//.test(file.type))||/\.(png|jpe?g|webp)$/i.test(file.name||''); if(!typeOk){ i18nAlert('err.image.type','Unsupported image type'); return; } try{ const dataUrl=await downscaleImage(file,1200,1200); thumb.innerHTML=`<img src="${escapeHtmlAttr(dataUrl)}" alt=""/>`; set('metaImage', dataUrl); render(); }catch(err){ i18nAlert('err.image.load','Image load failed'); } } const outer=document.createElement('div'); outer.style.gridColumn='1 / -1'; outer.appendChild(wrap); return outer; }
 
@@ -550,7 +633,12 @@
 
   window.print(); window.__GDDW_EXPORTING__ = false;
 }
-
+	// BulletPoint helper
+	function autoExpand(el) {
+	el.style.height = 'auto';
+	el.style.height = el.scrollHeight + 'px';
+	}
+	
   function go(index=Wizard.step, opts={}){ const preserve=!!opts.preserveScroll; const skipFocus=!!opts.skipFocus; const y=preserve?window.scrollY:0; Wizard.step=Math.max(0, Math.min(index, Wizard.steps.length-1)); const s=Wizard.steps[Wizard.step]; fieldsEl.classList.toggle('single', !!s.single); fieldsEl.innerHTML=''; s.fields.forEach(fld=>renderField(fld, fieldsEl)); buildStepsNavProgress(); prevBtn.disabled=(Wizard.step===0); nextBtn.textContent=(Wizard.step===Wizard.steps.length-1)?'btn.print':'btn.next'; if(!skipFocus){ const first=fieldsEl.querySelector('input,textarea,input[type="checkbox"],.dz-thumb,button'); if(first) first.focus(); } if(preserve){ requestAnimationFrame(()=> window.scrollTo({ top:y, behavior:'instant' })); } persist(); }
   function render(){ go(Wizard.step, { preserveScroll:true, skipFocus:true }); }
 
@@ -573,6 +661,14 @@
       orderedKeys,'templateId', ...extraPrefs, 'metaImage']);
     const pruned={};
     Object.keys(data||{}).forEach(k=>{ if(allowed.has(k)) pruned[k]=data[k]; });
+    
+	// --- MIGRATION FOR NEW BULLET FIELDS ---
+    if (typeof pruned.pluginsTools === 'string')
+        pruned.pluginsTools = [pruned.pluginsTools];
+
+    if (typeof pruned.assetSources === 'string')
+        pruned.assetSources = [pruned.assetSources];
+
     return pruned;
   }
   function computeKeysInWizardOrder(t){ const keys=[]; (t.sections||[]).forEach(entry=>{ const F=FrameworkRegistry && FrameworkRegistry[entry.framework]; const fields=F && F.step ? F.step(entry.rules, entry) : []; fields.forEach(f=>{ if(f && typeof f==='object'){ if(f.type==='input' || f.type==='textarea' || f.type==='checkboxes' || f.type==='radios'){ if(f.name) keys.push(f.name); } else if (f.type==='review-panel' || f.type==='image'){ } } }); if(entry.framework==='repeatable_items'){ if(entry.editor==='dynamic-steps') keys.push('loopSteps'); if(entry.editor==='dynamic-features') keys.push('features'); if(entry.editor==='dynamic-team') keys.push('teamMembers'); if(entry.editor==='dynamic-milestones') keys.push('milestones'); } }); return keys; }
