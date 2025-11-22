@@ -167,19 +167,18 @@
     if (field.type==='dynamic-team')       return parent.appendChild(renderDynamicTeam(field));
     if (field.type==='dynamic-milestones') return parent.appendChild(renderDynamicMilestones(field));
     if (field.type==='dynamic-bullets') {
-    const wrap = document.createElement('div');
-    wrap.style.gridColumn = '1 / -1';
-
-    const lab = document.createElement('label');
-    lab.textContent = field.label || '';
-    wrap.appendChild(lab);
-
-    wrap.appendChild(renderDynamicBullets(field));
-    parent.appendChild(wrap);
-    return wrap;
-}
-	if (field.type==='dynamic-bullets')   return parent.appendChild(renderDynamicBullets(field));
-	if (field.type==='image')              return parent.appendChild(renderImageField(field));
+      const wrap = document.createElement('div');
+      wrap.style.gridColumn = '1 / -1';
+      if (field.label){
+        const lab = document.createElement('label');
+        lab.textContent = field.label;
+        wrap.appendChild(lab);
+      }
+      wrap.appendChild(renderDynamicBullets(field));
+      parent.appendChild(wrap);
+      return wrap;
+    }
+    if (field.type==='image')              return parent.appendChild(renderImageField(field));
     if (field.type==='review-panel')       return parent.appendChild(renderReviewPanel(field.variant));
     if (field.type === 'info') {
       const wrap = document.createElement('div');
@@ -188,34 +187,56 @@
       parent.appendChild(wrap);
       return wrap;
     }
-    const wrap=document.createElement('div'); if(parent.classList.contains('single')) wrap.style.gridColumn='1 / -1'; if(field.label){ const lab=document.createElement('label'); lab.textContent=field.label; wrap.appendChild(lab); }   
-	if (field.type==='textarea'){ const ta=document.createElement('textarea'); ta.placeholder=field.placeholder||''; ta.value=Wizard.data[field.name]||''; ta.oninput=e=>set(field.name,e.target.value); wrap.appendChild(ta); parent.appendChild(wrap); return wrap; }
-    if (field.type==='checkboxes'){ 
-  const list=document.createElement('div'); 
-  list.className='checklist'; 
-  const cur=new Set(Wizard.data[field.name]||[]); 
-  (field.options||[]).forEach(opt=>{
-    const lab=document.createElement('label'); 
-    lab.className='chip'; 
-    const cb=document.createElement('input'); 
-    cb.type='checkbox'; 
-    cb.value=opt;                  // store the i18n key as value
-    cb.checked=cur.has(opt); 
-    cb.onchange=()=>{
-      const now=new Set(Wizard.data[field.name]||[]); 
-      if(cb.checked) now.add(opt); else now.delete(opt); 
-      set(field.name, Array.from(now)); 
-    }; 
-    lab.appendChild(cb); 
-    // label text is the i18n key, translation system will replace it
-    lab.appendChild(document.createTextNode(opt)); 
-    list.appendChild(lab); 
-  }); 
-  wrap.appendChild(list); 
-  parent.appendChild(wrap); 
-  return wrap; 
-}
-    if (field.type==='radios'){ const list=document.createElement('div'); list.className='radio-group'; if(field.name==='templateId'){ const current=String(Wizard.data.templateId||'basic'); Object.values(TemplateRegistry||{}).forEach(tpl=>{ const row=document.createElement('label'); row.className='radio-option'; const rb=document.createElement('input'); rb.type='radio'; rb.name='templateId'; rb.value=tpl.id; rb.checked=(tpl.id===current); rb.onchange=()=>{ switchTemplate(tpl.id); }; row.appendChild(rb); row.appendChild(document.createTextNode(tpl.label||tpl.id)); list.appendChild(row); }); } wrap.appendChild(list); parent.appendChild(wrap); return wrap; }
+    const wrap=document.createElement('div'); if(parent.classList.contains('single')) wrap.style.gridColumn='1 / -1'; if(field.label){ const lab=document.createElement('label'); lab.textContent=field.label; wrap.appendChild(lab); }
+    if (field.type==='textarea'){ const ta=document.createElement('textarea'); ta.placeholder=field.placeholder||''; ta.value=Wizard.data[field.name]||''; ta.oninput=e=>set(field.name,e.target.value); wrap.appendChild(ta); parent.appendChild(wrap); return wrap; }
+    if (field.type==='checkboxes'){
+      const list=document.createElement('div');
+      list.className='checklist';
+      const cur=new Set(Wizard.data[field.name]||[]);
+      (field.options||[]).forEach(opt=>{
+        const lab=document.createElement('label');
+        lab.className='chip';
+        const cb=document.createElement('input');
+        cb.type='checkbox';
+        cb.value=opt;                  // store the i18n key as value
+        cb.checked=cur.has(opt);
+        cb.onchange=()=>{
+          const now=new Set(Wizard.data[field.name]||[]);
+          if(cb.checked) now.add(opt); else now.delete(opt);
+          set(field.name, Array.from(now));
+        };
+        lab.appendChild(cb);
+        // label text is the i18n key, translation system will replace it
+        lab.appendChild(document.createTextNode(opt));
+        list.appendChild(lab);
+      });
+      wrap.appendChild(list);
+      parent.appendChild(wrap);
+      return wrap;
+    }
+    if (field.type==='radios'){
+      const list=document.createElement('div');
+      list.className='radio-group';
+      if(field.name==='templateId'){
+        const current=String(Wizard.data.templateId||'basic');
+        Object.values(TemplateRegistry||{}).forEach(tpl=>{
+          const row=document.createElement('label');
+          row.className='radio-option';
+          const rb=document.createElement('input');
+          rb.type='radio';
+          rb.name='templateId';
+          rb.value=tpl.id;
+          rb.checked=(tpl.id===current);
+          rb.onchange=()=>{ switchTemplate(tpl.id); };
+          row.appendChild(rb);
+          row.appendChild(document.createTextNode(tpl.label||tpl.id));
+          list.appendChild(row);
+        });
+      }
+      wrap.appendChild(list);
+      parent.appendChild(wrap);
+      return wrap;
+    }
     const inp=document.createElement('input'); inp.type=field.inputType||'text'; inp.placeholder=field.placeholder||''; inp.value=Wizard.data[field.name]||field.value||''; inp.oninput=e=>set(field.name,e.target.value); wrap.appendChild(inp); parent.appendChild(wrap); return wrap;
   }
 
@@ -346,7 +367,7 @@
     });
   }
 
-  // --- RESTORED: Team & Roles editor ---
+  // --- Team & Roles editor ---
   function renderDynamicTeam(field){
     if(!Array.isArray(Wizard.data.teamMembers) || Wizard.data.teamMembers.length===0){
       const legacy=String(Wizard.data.team||'').trim();
@@ -367,87 +388,80 @@
     });
   }
 
-	// -- Bullet Points -- 
-function renderDynamicBullets(field) {
-
-    // ensure the field exists in data
+  // -- Bullet Points --
+  function renderDynamicBullets(field) {
     if (!Array.isArray(Wizard.data[field.name])) {
-        Wizard.data[field.name] = [];
+      Wizard.data[field.name] = [];
     }
-
     const arr = Wizard.data[field.name];
-    const wrap = TemplateEngine.make("dynamicWrapper");
+    const wrap = TemplateEngine.make('dynamicWrapper');
 
-    // renderer
     function render() {
-        wrap.innerHTML = "";
+      wrap.innerHTML = '';
 
-        arr.forEach((val, i) => {
-            const row = TemplateEngine.make("dynamicRow");
+      arr.forEach((val, i) => {
+        const row = TemplateEngine.make('dynamicRow');
 
-            // single-line expanding textarea
-            const input = document.createElement("textarea");
-            input.rows = 1;
-            input.value = val;
-            input.classList.add("dynamic-input");
-
-            input.addEventListener("input", (e) => {
-                arr[i] = e.target.value;
-                Wizard.data[field.name] = [...arr];
-                autoExpand(input);
-            });
-
-            autoExpand(input);
-
-            // move up
-            const up = TemplateEngine.make("dynamicUp");
-            up.onclick = () => {
-                if (i > 0) {
-                    [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
-                    Wizard.data[field.name] = [...arr];
-                    render();
-                }
-            };
-
-            // move down
-            const down = TemplateEngine.make("dynamicDown");
-            down.onclick = () => {
-                if (i < arr.length - 1) {
-                    [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
-                    Wizard.data[field.name] = [...arr];
-                    render();
-                }
-            };
-
-            // remove
-            const remove = TemplateEngine.make("dynamicRemove");
-            remove.onclick = () => {
-                arr.splice(i, 1);
-                Wizard.data[field.name] = [...arr];
-                render();
-            };
-
-            row.appendChild(input);
-            row.appendChild(up);
-            row.appendChild(down);
-            row.appendChild(remove);
-            wrap.appendChild(row);
+        const input = document.createElement('textarea');
+        input.rows = 1;
+        input.value = val;
+        input.classList.add('dynamic-input');
+        input.addEventListener('input', (e) => {
+          arr[i] = e.target.value;
+          Wizard.data[field.name] = [...arr];
+          autoExpand(input);
+          persist();
         });
+        autoExpand(input);
 
-        // add button
-        const add = TemplateEngine.make("dynamicAdd");
-        add.onclick = () => {
-            arr.push("");
+        const up = TemplateEngine.make('dynamicUp');
+        up.onclick = () => {
+          if (i > 0) {
+            [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
             Wizard.data[field.name] = [...arr];
+            persist();
             render();
+          }
         };
-        wrap.appendChild(add);
+
+        const down = TemplateEngine.make('dynamicDown');
+        down.onclick = () => {
+          if (i < arr.length - 1) {
+            [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+            Wizard.data[field.name] = [...arr];
+            persist();
+            render();
+          }
+        };
+
+        const remove = TemplateEngine.make('dynamicRemove');
+        remove.onclick = () => {
+          arr.splice(i, 1);
+          Wizard.data[field.name] = [...arr];
+          persist();
+          render();
+        };
+
+        row.appendChild(input);
+        row.appendChild(up);
+        row.appendChild(down);
+        row.appendChild(remove);
+        wrap.appendChild(row);
+      });
+
+      const add = TemplateEngine.make('dynamicAdd');
+      add.onclick = () => {
+        arr.push('');
+        Wizard.data[field.name] = [...arr];
+        persist();
+        render();
+      };
+      wrap.appendChild(add);
     }
 
     render();
     return wrap;
-}
-
+  }
 
   function renderImageField(field){ const wrap=document.createElement('div'); wrap.style.gridColumn='1 / -1'; const lab=document.createElement('label'); lab.textContent=field.label||'field.image'; wrap.appendChild(lab); const panel=document.createElement('div'); panel.className='imgPanel'; const row=document.createElement('div'); row.className='imgRow'; const thumb=document.createElement('div'); thumb.className='dz-thumb'; thumb.innerHTML=Wizard.data.metaImage?`<img src="${escapeHtmlAttr(Wizard.data.metaImage)}" alt="" />`:'ui.camera'; row.appendChild(thumb); const btnRow=document.createElement('div'); btnRow.className='btnRow'; const uploadBtn=document.createElement('button'); uploadBtn.className='secondary'; uploadBtn.textContent='btn.uploadImage'; const clearBtn=document.createElement('button'); clearBtn.className='secondary'; clearBtn.textContent='btn.clear'; btnRow.appendChild(uploadBtn); btnRow.appendChild(clearBtn); row.appendChild(btnRow); const sizeRow=document.createElement('div'); sizeRow.className='sizeRow'; const minus=document.createElement('button'); minus.className='secondary'; minus.textContent='ui.minus'; const sizeVal=document.createElement('span'); sizeVal.textContent=`${Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM)} mm`; const plus=document.createElement('button'); plus.className='secondary'; plus.textContent='ui.plus'; sizeRow.appendChild(document.createTextNode('label.printSize')); sizeRow.appendChild(minus); sizeRow.appendChild(sizeVal); sizeRow.appendChild(plus); const tip=document.createElement('div'); tip.className='tip'; tip.innerHTML='tip.image.dragdrop'; panel.appendChild(row); panel.appendChild(sizeRow); panel.appendChild(tip); wrap.appendChild(panel); uploadBtn.onclick=()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) handleImageFile(f); }; inp.click(); }; clearBtn.onclick=()=>{ set('metaImage',''); thumb.innerHTML='ui.camera'; persist(); }; minus.onclick=()=>{ const cur=Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM); const next=Math.max(MIN_IMG_MM, cur-STEP_IMG_MM); set('metaImageMM', next); sizeVal.textContent=`${next} mm`; persist(); }; plus.onclick=()=>{ const cur=Number(Wizard.data.metaImageMM||DEFAULT_IMG_MM); const next=Math.min(MAX_IMG_MM, cur+STEP_IMG_MM); set('metaImageMM', next); sizeVal.textContent=`${next} mm`; persist(); }; let dragCounter=0; const acceptDrop=e=>{ e.preventDefault(); e.stopPropagation(); if(e.dataTransfer) e.dataTransfer.dropEffect='copy'; }; const onEnter=e=>{ acceptDrop(e); dragCounter++; panel.classList.add('dragging'); }; const onLeave=e=>{ acceptDrop(e); dragCounter=Math.max(0,dragCounter-1); if(dragCounter===0) panel.classList.remove('dragging'); }; const onOver=e=>acceptDrop(e); const onDrop=e=>{ acceptDrop(e); dragCounter=0; panel.classList.remove('dragging'); const dt=e.dataTransfer; if(!dt) return; const files=dt.files; if(files&&files.length){ handleImageFile(files[0]); } }; [panel, thumb].forEach(el=>{ el.addEventListener('dragenter', onEnter); el.addEventListener('dragleave', onLeave); el.addEventListener('dragover', onOver); el.addEventListener('drop', onDrop); }); async function handleImageFile(file){ const typeOk=(file.type&&/^image\//.test(file.type))||/\.(png|jpe?g|webp)$/i.test(file.name||''); if(!typeOk){ i18nAlert('err.image.type','Unsupported image type'); return; } try{ const dataUrl=await downscaleImage(file,1200,1200); thumb.innerHTML=`<img src="${escapeHtmlAttr(dataUrl)}" alt=""/>`; set('metaImage', dataUrl); render(); }catch(err){ i18nAlert('err.image.load','Image load failed'); } } const outer=document.createElement('div'); outer.style.gridColumn='1 / -1'; outer.appendChild(wrap); return outer; }
 
@@ -559,8 +573,6 @@ function renderDynamicBullets(field) {
   // --- MINIMAL FIX: prefer URL over BASE64 when running from file:// to avoid CORS ---
   async function ensureFooterLogoBase64() {
     if (location.protocol === 'file:') {
-      // Force URL usage for footer logo during offline/file:// runs
-      // renderFooter() will use FOOTER_LOGO_URL; leave BASE64 empty.
       window.FOOTER_LOGO_BASE64 = '';
       return;
     }
@@ -573,19 +585,17 @@ function renderDynamicBullets(field) {
           reader.onload = () => resolve(reader.result);
           reader.readAsDataURL(blob);
         });
-        // strip the "data:image/png;base64," prefix
         window.FOOTER_LOGO_BASE64 = String(dataUrl).split(',')[1] || '';
       } catch (e) {
-        console.warn("Could not load footer logo:", e);
+        console.warn('Could not load footer logo:', e);
         window.FOOTER_LOGO_BASE64 = '';
       }
     }
   }
 
-  // NEW: wait until an <img> is decode-ready (addresses first-print race for footer logo)
   async function waitForImageDecode(img, timeout = 1200) {
-    if (!img) return; // nothing to wait for
-    if (img.complete && img.naturalWidth > 0) return; // already ready
+    if (!img) return;
+    if (img.complete && img.naturalWidth > 0) return;
     if (typeof img.decode === 'function') {
       try {
         await Promise.race([
@@ -593,7 +603,7 @@ function renderDynamicBullets(field) {
           new Promise((_, rej) => setTimeout(rej, timeout))
         ]);
         return;
-      } catch (_) { /* fall through to events/timeout */ }
+      } catch (_) {}
     }
     await new Promise((resolve) => {
       const t = setTimeout(resolve, timeout);
@@ -602,7 +612,6 @@ function renderDynamicBullets(field) {
     });
   }
 
-  // NOTE: Surgical change below — LoopOverview & ExampleSession render as h3 (no section wrapper)
   async function buildPrintHTML(d){
     const t=getActiveTemplate();
     const order=resolveExportOrder(t);
@@ -629,29 +638,80 @@ function renderDynamicBullets(field) {
     const combined=`<div class="contentWrap">${coverBlock}${bodyHTML}</div>${footer}`;
     return `<div class="page"><div class="pageSafe">${combined}</div></div>`;
   }
+
   function ensurePrintRoot(){ let pv=document.getElementById('printView'); if(!pv){ pv=document.createElement('div'); pv.id='printView'; document.body.appendChild(pv); } return pv; }
+
   async function doPrint() {
-  await ensureFooterLogoBase64();
-  window.__GDDW_EXPORTING__ = true;const pv=ensurePrintRoot(); const theme=(Wizard.data.exportTheme==='dark')?'dark':'light'; pv.setAttribute('data-theme', theme); const html=await buildPrintHTML(Wizard.data); pv.innerHTML=`<div id="printBg"></div>` + html; await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); try{ const page=pv.querySelector('.page'); const safe=page?.querySelector('.pageSafe'); if(page && safe){ const probe=document.createElement('div'); probe.style.height='100vh'; probe.style.opacity='0'; safe.appendChild(probe); const pageH=probe.getBoundingClientRect().height||0; probe.remove(); const secs=[...page.querySelectorAll('section')]; secs.forEach(s=>s.classList.remove('no-top-divider')); if(pageH>0){ const baseTop=safe.getBoundingClientRect().top; let prevIdx=null; const tol=2; secs.forEach((sec)=>{ const y=sec.getBoundingClientRect().top - baseTop; const idx=Math.floor((y+0.001)/pageH); const mod=((y%pageH)+pageH)%pageH; const isTop = mod < tol; if (isTop || (prevIdx!==null && idx>prevIdx)) sec.classList.add('no-top-divider'); prevIdx=idx; }); } } }catch(e){}
+    await ensureFooterLogoBase64();
+    window.__GDDW_EXPORTING__ = true;
+    const pv=ensurePrintRoot();
+    const theme=(Wizard.data.exportTheme==='dark')?'dark':'light';
+    pv.setAttribute('data-theme', theme);
+    const html=await buildPrintHTML(Wizard.data);
+    pv.innerHTML=`<div id="printBg"></div>` + html;
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    try{
+      const page=pv.querySelector('.page');
+      const safe=page?.querySelector('.pageSafe');
+      if(page && safe){
+        const probe=document.createElement('div');
+        probe.style.height='100vh';
+        probe.style.opacity='0';
+        safe.appendChild(probe);
+        const pageH=probe.getBoundingClientRect().height||0;
+        probe.remove();
+        const secs=[...page.querySelectorAll('section')];
+        secs.forEach(s=>s.classList.remove('no-top-divider'));
+        if(pageH>0){
+          const baseTop=safe.getBoundingClientRect().top;
+          let prevIdx=null;
+          const tol=2;
+          secs.forEach((sec)=>{
+            const y=sec.getBoundingClientRect().top - baseTop;
+            const idx=Math.floor((y+0.001)/pageH);
+            const mod=((y%pageH)+pageH)%pageH;
+            const isTop = mod < tol;
+            if (isTop || (prevIdx!==null && idx>prevIdx)) sec.classList.add('no-top-divider');
+            prevIdx=idx;
+          });
+        }
+      }
+    }catch(e){}
 
-  // NEW: ensure footer logo image is decode-ready before printing (fixes first-print missing logo)
-  const footerImg = pv.querySelector('.gdd-footer img');
-  if (footerImg) {
-    footerImg.setAttribute('loading', 'eager');
-    footerImg.setAttribute('decoding', 'sync');
-    await waitForImageDecode(footerImg, 1200);
+    const footerImg = pv.querySelector('.gdd-footer img');
+    if (footerImg) {
+      footerImg.setAttribute('loading', 'eager');
+      footerImg.setAttribute('decoding', 'sync');
+      await waitForImageDecode(footerImg, 1200);
+    }
+    await new Promise(r => setTimeout(r, 50));
+
+    window.print();
+    window.__GDDW_EXPORTING__ = false;
   }
-  await new Promise(r => setTimeout(r, 50));
 
-  window.print(); window.__GDDW_EXPORTING__ = false;
-}
-	// BulletPoint helper
-	function autoExpand(el) {
-	el.style.height = 'auto';
-	el.style.height = el.scrollHeight + 'px';
-	}
-	
-  function go(index=Wizard.step, opts={}){ const preserve=!!opts.preserveScroll; const skipFocus=!!opts.skipFocus; const y=preserve?window.scrollY:0; Wizard.step=Math.max(0, Math.min(index, Wizard.steps.length-1)); const s=Wizard.steps[Wizard.step]; fieldsEl.classList.toggle('single', !!s.single); fieldsEl.innerHTML=''; s.fields.forEach(fld=>renderField(fld, fieldsEl)); buildStepsNavProgress(); prevBtn.disabled=(Wizard.step===0); nextBtn.textContent=(Wizard.step===Wizard.steps.length-1)?'btn.print':'btn.next'; if(!skipFocus){ const first=fieldsEl.querySelector('input,textarea,input[type="checkbox"],.dz-thumb,button'); if(first) first.focus(); } if(preserve){ requestAnimationFrame(()=> window.scrollTo({ top:y, behavior:'instant' })); } persist(); }
+  // BulletPoint helper
+  function autoExpand(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function go(index=Wizard.step, opts={}){
+    const preserve=!!opts.preserveScroll;
+    const skipFocus=!!opts.skipFocus;
+    const y=preserve?window.scrollY:0;
+    Wizard.step=Math.max(0, Math.min(index, Wizard.steps.length-1));
+    const s=Wizard.steps[Wizard.step];
+    fieldsEl.classList.toggle('single', !!s.single);
+    fieldsEl.innerHTML='';
+    s.fields.forEach(fld=>renderField(fld, fieldsEl));
+    buildStepsNavProgress();
+    prevBtn.disabled=(Wizard.step===0);
+    nextBtn.textContent=(Wizard.step===Wizard.steps.length-1)?'btn.print':'btn.next';
+    if(!skipFocus){ const first=fieldsEl.querySelector('input,textarea,input[type="checkbox"],.dz-thumb,button'); if(first) first.focus(); }
+    if(preserve){ requestAnimationFrame(()=> window.scrollTo({ top:y, behavior:'instant' })); }
+    persist();
+  }
   function render(){ go(Wizard.step, { preserveScroll:true, skipFocus:true }); }
 
   function storageKeyFor(templateId){ return `${STORAGE_PREFIX}:${templateId}`; }
@@ -659,6 +719,7 @@ function renderDynamicBullets(field) {
   function set(k,v){ Wizard.data[k]=v; persist(); }
   function persist(){ try{ localStorage.setItem(storageKeyFor(Wizard.data.templateId||'basic'), JSON.stringify(Wizard.data)); }catch(e){} }
   function migrateLegacyIfNeeded(){ try{ const raw=localStorage.getItem(LEGACY_STORAGE_KEY); if(!raw) return; const obj=JSON.parse(raw); if(obj && typeof obj==='object'){ const tid=String(obj.templateId||'basic'); const key=storageKeyFor(tid); if(!localStorage.getItem(key)){ localStorage.setItem(key, JSON.stringify(obj)); } localStorage.removeItem(LEGACY_STORAGE_KEY); } }catch(e){} }
+
   function loadTemplateData(templateId){
     const key=storageKeyFor(templateId);
     let data=null;
@@ -669,31 +730,52 @@ function renderDynamicBullets(field) {
     const orderedKeys=computeKeysInWizardOrder(t);
     const extraPrefs = preferenceKeysForTemplate(t);
 
-    const allowed=new Set([...
-      orderedKeys,'templateId', ...extraPrefs, 'metaImage']);
+    const allowed=new Set([
+      ...orderedKeys,'templateId', ...extraPrefs, 'metaImage'
+    ]);
     const pruned={};
     Object.keys(data||{}).forEach(k=>{ if(allowed.has(k)) pruned[k]=data[k]; });
-    
-	// --- MIGRATION FOR NEW BULLET FIELDS ---
-    if (typeof pruned.pluginsTools === 'string')
-        pruned.pluginsTools = [pruned.pluginsTools];
 
+    // migration for new bullet fields
+    if (typeof pruned.pluginsTools === 'string')
+      pruned.pluginsTools = [pruned.pluginsTools];
     if (typeof pruned.assetSources === 'string')
-        pruned.assetSources = [pruned.assetSources];
+      pruned.assetSources = [pruned.assetSources];
 
     return pruned;
-  }ntry.framework; const fields=F && F.step ? F.step(entry.rules, e
-  function computeKeysInWizardOrder(t){ const keys=[]; (t.sections||[]).forEach(entry=>{ const F=FrameworkRegistry && FrameworkRegistry[entry) : []; fields.forEach(f=>{ if(f && typeof f==='object'){ 
-  if(
-   f.type==='input' 
-|| f.type==='textarea' 
-|| f.type==='checkboxes' 
-|| f.type==='radios'
-|| f.type==='dynamic-bullets'   // <-- ADD THIS
-){
-    if(f.name) keys.push(f.name);
-}
-  else if (f.type==='review-panel' || f.type==='image'){ } } }); if(entry.framework==='repeatable_items'){ if(entry.editor==='dynamic-steps') keys.push('loopSteps'); if(entry.editor==='dynamic-features') keys.push('features'); if(entry.editor==='dynamic-team') keys.push('teamMembers'); if(entry.editor==='dynamic-milestones') keys.push('milestones'); } }); return keys; }
+  }
+
+  function computeKeysInWizardOrder(t){
+    const keys=[];
+    (t.sections||[]).forEach(entry=>{
+      const F = FrameworkRegistry && FrameworkRegistry[entry.framework];
+      const fields = F && F.step ? F.step(entry.rules, entry) : [];
+      fields.forEach(f=>{
+        if(f && typeof f==='object'){
+          if(
+            f.type==='input' ||
+            f.type==='textarea' ||
+            f.type==='checkboxes' ||
+            f.type==='radios' ||
+            f.type==='dynamic-bullets'
+          ){
+            if(f.name) keys.push(f.name);
+          } else if (f.type==='review-panel' || f.type==='image'){
+            // allowed but no named key
+          }
+        }
+      });
+
+      if(entry.framework==='repeatable_items'){
+        if(entry.editor==='dynamic-steps') keys.push('loopSteps');
+        if(entry.editor==='dynamic-features') keys.push('features');
+        if(entry.editor==='dynamic-team') keys.push('teamMembers');
+        if(entry.editor==='dynamic-milestones') keys.push('milestones');
+      }
+    });
+    return keys;
+  }
+
   function makeDefaultData(templateId){ return { templateId }; }
   function switchTemplate(id){ Wizard.data=loadTemplateData(id); if(!Wizard.data.exportTheme) Wizard.data.exportTheme='light'; Wizard.steps=stepsForActiveTemplate(); Wizard.step=0; buildStepsNavProgress(); render(); persist(); }
 
@@ -709,7 +791,6 @@ function renderDynamicBullets(field) {
     if (Wizard.data.metaImage) dataOnly.metaImage = Wizard.data.metaImage;
     const payload={ templateId:t.id||'basic', version:2, data:dataOnly };
 
-    // Build nicer filename: Project_Title_template.json
     const rawTitle = (Wizard.data.project || 'Untitled').trim();
     const safeTitle = rawTitle.replace(/[^a-z0-9\-_.]+/gi, '_');
     const filename = `${safeTitle || 'Untitled'}_${t.id || 'basic'}.json`;
@@ -726,11 +807,9 @@ function renderDynamicBullets(field) {
       }catch(e){
         console.warn('FS export failed, falling back:', e);
         i18nAlert('err.fs.exportFailed','Could not save to the chosen folder; a download will start instead.');
-        // fall through to classic download
       }
     }
 
-    // Fallback: classic browser download
     download(filename, text);
   }
 
@@ -756,10 +835,11 @@ function renderDynamicBullets(field) {
       i18nAlert('msg.imported','Imported your JSON data.');
     }catch(e){ i18nAlert('err.json.invalid','Invalid JSON.'); }
   }
-  function downscaleImage(file,maxW,maxH){ return new Promise((resolve,reject)=>{ const img=new Image(); const fr=new FileReader(); fr.onload=()=>{ img.onload=()=>{ try{ const ratio=Math.min(maxW/img.width, maxH/img.height, 1); const w=Math.round(img.width*ratio); const h=Math.round(img.height*ratio); const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.imageSmoothingQuality='high'; ctx.drawImage(img,0,0,w,h); resolve(c.toDataURL('image/png', 0.95)); }catch(err){ reject(err); } }; img.onerror=()=>reject(new Error('err.image.load')); img.src=fr.result; }; fr.onerror=()=>reject(new Error('err.file.read')); fr.readAsDataURL(file); }); }
-  function attachEvents(){ prevBtn.onclick=()=>{ if(Wizard.step>0) go(Wizard.step-1); }; nextBtn.onclick=()=>{ if(Wizard.step<Wizard.steps.length-1) go(Wizard.step+1); else doPrint(); }; btnExportJSON.onclick=exportJSON; 
 
-    // Prefer FS API to open starting in the remembered folder; fallback to <input>
+  function downscaleImage(file,maxW,maxH){ return new Promise((resolve,reject)=>{ const img=new Image(); const fr=new FileReader(); fr.onload=()=>{ img.onload=()=>{ try{ const ratio=Math.min(maxW/img.width, maxH/img.height, 1); const w=Math.round(img.width*ratio); const h=Math.round(img.height*ratio); const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.imageSmoothingQuality='high'; ctx.drawImage(img,0,0,w,h); resolve(c.toDataURL('image/png', 0.95)); }catch(err){ reject(err); } }; img.onerror=()=>reject(new Error('err.image.load')); img.src=fr.result; }; fr.onerror=()=>reject(new Error('err.file.read')); fr.readAsDataURL(file); }); }
+
+  function attachEvents(){ prevBtn.onclick=()=>{ if(Wizard.step>0) go(Wizard.step-1); }; nextBtn.onclick=()=>{ if(Wizard.step<Wizard.steps.length-1) go(Wizard.step+1); else doPrint(); }; btnExportJSON.onclick=exportJSON;
+
     btnImportJSON.onclick = async () => {
       if (FS.supported()) {
         try{
@@ -786,6 +866,7 @@ function renderDynamicBullets(field) {
     btnPrintHeader.onclick=doPrint;
     document.addEventListener('i18n:changed', () => { render(); });
   }
+
   function init(){ migrateLegacyIfNeeded(); Wizard.steps=stepsForActiveTemplate(); Wizard.data=loadTemplateData(Wizard.data.templateId); if(!Wizard.data.exportTheme) Wizard.data.exportTheme='light'; attachEvents(); render(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
