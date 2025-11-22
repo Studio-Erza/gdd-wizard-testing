@@ -391,7 +391,7 @@
   // -- Bullet Points --
   function renderDynamicBullets(field) {
     if (!Array.isArray(Wizard.data[field.name])) {
-      Wizard.data[field.name] = [];
+      Wizard.data[field.name] = [...arr];
     }
     const arr = Wizard.data[field.name];
     const wrap = TemplateEngine.make('dynamicWrapper');
