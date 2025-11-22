@@ -162,6 +162,10 @@
   function buildStepsNavProgress(){ buildSteps(); const pct=(Wizard.step)/(Math.max(1,Wizard.steps.length-1))*100; progressBarEl.style.width=pct+'%'; }
 
   function renderField(field,parent){
+    if (field.type === 'repeatableList') {
+        return parent.appendChild(renderRepeatableList(field));
+    }
+
     if (field.type==='dynamic-steps')      return parent.appendChild(renderDynamicSteps(field));
     if (field.type==='dynamic-features')   return parent.appendChild(renderDynamicFeatures(field));
     if (field.type==='dynamic-team')       return parent.appendChild(renderDynamicTeam(field));
@@ -206,7 +210,28 @@
     const inp=document.createElement('input'); inp.type=field.inputType||'text'; inp.placeholder=field.placeholder||''; inp.value=Wizard.data[field.name]||field.value||''; inp.oninput=e=>set(field.name,e.target.value); wrap.appendChild(inp); parent.appendChild(wrap); return wrap;
   }
 
-  function repeatableEditor(cfg){
+  function renderRepeatableList(field){
+    const wrap=document.createElement('div');
+    wrap.style.gridColumn='1 / -1';
+    const list = Array.isArray(Wizard.data[field.name]) ? Wizard.data[field.name] : (Wizard.data[field.name] = ['']);
+    const editor = repeatableEditor({
+      title: field.label || field.name,
+      items: list,
+      create: ()=>'',
+      renderRow:(txt,idx,api)=>{
+        const inp=document.createElement('input');
+        inp.type='text';
+        inp.placeholder = field.placeholders?.item || '';
+        inp.value=txt||'';
+        inp.oninput=e=>{ list[idx]=e.target.value; persist(); };
+        return [inp, api.controls(idx)];
+      }
+    });
+    wrap.appendChild(editor);
+    return wrap;
+  }
+
+function repeatableEditor(cfg){
     const wrap=document.createElement('div');
     wrap.className='featureCard';
 
