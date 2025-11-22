@@ -166,7 +166,19 @@
     if (field.type==='dynamic-features')   return parent.appendChild(renderDynamicFeatures(field));
     if (field.type==='dynamic-team')       return parent.appendChild(renderDynamicTeam(field));
     if (field.type==='dynamic-milestones') return parent.appendChild(renderDynamicMilestones(field));
-    if (field.type=== 'dynamic-bullets')   return parent.appendChild(renderDynamicBullets(field));
+    if (field.type==='dynamic-bullets') {
+    const wrap = document.createElement('div');
+    wrap.style.gridColumn = '1 / -1';
+
+    const lab = document.createElement('label');
+    lab.textContent = field.label || '';
+    wrap.appendChild(lab);
+
+    wrap.appendChild(renderDynamicBullets(field));
+    parent.appendChild(wrap);
+    return wrap;
+}
+	if (field.type==='dynamic-bullets')   return parent.appendChild(renderDynamicBullets(field));
 	if (field.type==='image')              return parent.appendChild(renderImageField(field));
     if (field.type==='review-panel')       return parent.appendChild(renderReviewPanel(field.variant));
     if (field.type === 'info') {
