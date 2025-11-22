@@ -682,7 +682,7 @@ function renderDynamicBullets(field) {
         pruned.assetSources = [pruned.assetSources];
 
     return pruned;
-  }ntry.framework]; const fields=F && F.step ? F.step(entry.rules, e
+  }ntry.framework; const fields=F && F.step ? F.step(entry.rules, e
   function computeKeysInWizardOrder(t){ const keys=[]; (t.sections||[]).forEach(entry=>{ const F=FrameworkRegistry && FrameworkRegistry[entry) : []; fields.forEach(f=>{ if(f && typeof f==='object'){ 
   if(
    f.type==='input' 
