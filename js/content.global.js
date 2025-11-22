@@ -143,18 +143,11 @@
     });
     return `<p class="team-line">${escapeHtml(parts.join(' | '))}</p>`;
   }
-	function renderAssets(d){
-	  const fmt = arr =>
-		Array.isArray(arr)
-		  ? arr.filter(x => String(x||'').trim())
-			   .map(x => `• ${escapeHtml(x)}`)
-			   .join('<br>')
-		  : escapeHtml(arr || '');
-
-	  return P3Key('export.engineVersion', d.engineVersion)
-		   + P3Key('export.pluginsTools', fmt(d.pluginsTools))
-		   + P3Key('export.assetSources', fmt(d.assetSources));
-	}
+  function renderAssets(d){
+    return P3Key('export.engineVersion', d.engineVersion)
+         + P3Key('export.pluginsTools', d.pluginsTools)
+         + P3Key('export.assetSources', d.assetSources);
+  }
 
   // ---------- Date helpers ----------
   function getLang(){
@@ -368,8 +361,8 @@
 		  placeholders: DYNAMIC_TEAM_PLACEHOLDERS },
 		{ id:'assets', framework:'form_section', title:'section.assetsTools', exporter:'assets', fields:[
 		  t('engineVersion','field.engineVersion','ph.jam.engineVersion'),
-          { type: "dynamic-bullets", name:"pluginsTools", label:"field.pluginsTools" },
-		  { type: "dynamic-bullets", name:"assetSources", label:"field.assetSources" }
+          t('pluginsTools','field.pluginsTools','ph.jam.pluginsTools'),
+          t('assetSources','field.assetSources','ph.jam.assetSources')
 		]},
         // Restored: Jam Review & Export step (UI only)
         { id:'review', framework:'review_export', title:'section.reviewExport', variant:'jam' }

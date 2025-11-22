@@ -1,4 +1,4 @@
-const CACHE = "gddw-v1.9.5";
+const CACHE = "gddw-v1.10.0";
 
 // put EVERY asset your app needs offline here:
 const OFFLINE_ASSETS = [
